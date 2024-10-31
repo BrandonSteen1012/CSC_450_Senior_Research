@@ -1,6 +1,6 @@
 # CSC_450_Senior_Research
 
- ## Description
+## Description
 
 The objective of this project is to perform a comparative analysis
 of two popular types of database systems, those being relational
