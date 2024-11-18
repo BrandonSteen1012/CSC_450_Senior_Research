@@ -1,0 +1,77 @@
+/*
+Here is the script used in JMeter to connect it to MongoDB
+This uses a JSR223 Sampler to run this script
+ */
+
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoClient;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoDatabase;
+
+import java.util.Arrays;
+
+try {
+// Configure MongoClientSettings
+MongoClientSettings settings = MongoClientSettings.builder()
+        .applyToClusterSettings(builder ->
+                builder.hosts(Arrays.asList(
+                        new ServerAddress(vars.get("mongoHost"), vars.get("mongoPort").toInteger())
+                ))
+        )
+        .build();
+
+// Create MongoClient instance
+MongoClient mongoClient = MongoClients.create(settings);
+
+// Access the specified database
+MongoDatabase database = mongoClient.getDatabase(vars.get("databaseName"));
+
+// Access the specified collection
+MongoCollection<Document> collection = database.getCollection(vars.get("collectionName"));
+
+// Store the collection in JMeter variables for further use
+    vars.putObject("collection", collection);
+
+// Return success message
+    return "Connected to " + vars.get("collectionName");
+} catch (Exception e) {
+        // Handle exceptions and set JMeter sample result
+        SampleResult.setSuccessful(false);
+    SampleResult.setResponseCode("500");
+    SampleResult.setResponseMessage("Exception: " + e);
+}
+
+/*
+Here is the script for entering queries into MongoDB
+ */
+
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+import com.mongodb.client.MongoCursor;
+
+try {
+// Retrieve the collection object
+MongoCollection<Document> collection = vars.getObject("collection");
+
+// Query logic will go here
+MongoCursor<Document> cursor = collection.find().limit(1000).iterator();
+
+// Process the results
+StringBuilder results = new StringBuilder("Retrieved Documents:\n");
+
+    while (cursor.hasNext()) {
+Document doc = cursor.next();
+        results.append(doc.toJson()).append("\n");
+    }
+
+            // Save the results to a JMeter variable or return them as output
+            vars.put("retrievedDocuments", results.toString());
+        return results.toString();
+} catch (Exception e) {
+        // Handle exceptions and set JMeter sample result
+        SampleResult.setSuccessful(false);
+    SampleResult.setResponseCode("500");
+    SampleResult.setResponseMessage("Exception: " + e);
+}
+
